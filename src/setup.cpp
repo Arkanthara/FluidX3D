@@ -1,6 +1,226 @@
 #include "setup.hpp"
 
 
+void main_setup() { // dam break; required extensions in defines.hpp: FP16S, VOLUME_FORCE, SURFACE, INTERACTIVE_GRAPHICS
+	// ################################################################## define simulation box size, viscosity and volume force ###################################################################
+	// LBM lbm(128u, 384u, 96u, 0.02f, 0.0f, -0.00007f, -0.0005f, 0.01f);
+	// LBM lbm(128u, 256u, 256u, 0.005f, 0.0f, 0.0f, -0.0002f, 0.0001f);
+	LBM lbm(400u, 400u, 200u, 0.009f, 0.0f, 0.0f, -0.0005f, 0.0001f);
+	// ###################################################################################### define geometry ######################################################################################
+	const uint Nx=lbm.get_Nx(), Ny=lbm.get_Ny(), Nz=lbm.get_Nz(); parallel_for(lbm.get_N(), [&](ulong n) { uint x=0u, y=0u, z=0u; lbm.coordinates(n, x, y, z);
+		//if(z<Nz*6u/8u && y<Ny/8u) lbm.flags[n] = TYPE_F;
+		if(x==0u||x==Nx-1u||y==0u||y==Ny-1u||z==0u||z==Nz-1u) lbm.flags[n] = TYPE_S; // all non periodic
+		if(cuboid(x, y, z, float3(200u, 200u, 100u), float3(200u, 200u, 110u))) lbm.flags[n] = TYPE_F;
+	}); // ####################################################################### run simulation, export images and data ##########################################################################
+	lbm.graphics.visualization_modes = lbm.get_D()==1u ? VIS_PHI_RAYTRACE : VIS_PHI_RASTERIZE;
+	lbm.run();
+} /**/
+
+//void main_setup() {
+//	// Dimensions du domaine (mètres)
+//	const float size_x_domain = 80000.0f / 200.0f; // en mètres
+//	const float size_y_domain = 40000.0f / 200.0f; // en mètres
+//	const float size_z_domain = 80000.0f / 200.0f; // en mètres
+//
+//	// Dimensions du fluide (mètres)
+//	const float size_x_fluid = 40000.0f / 200.0f; // en mètres
+//	const float size_y_fluid = 22000.0f / 200.0f; // en mètres
+//	const float size_z_fluid = 40000.0f / 200.0f; // en mètres
+//
+//	// Définir la résolution du maillage de simulation (nombre de cellules dans chaque direction)
+//	const uint3 lbm_N = resolution(float3(1.0f, 1.0f, 0.5f), 4000u); // Exemple, ajuster selon les besoins
+//
+//	// Calculer l'échelle de conversion en unités LBM
+//	float lbm_D = (float)lbm_N.x / size_x_domain;
+//	const float lbm_u = 0.05f; // vitesse d'impact en unités LBM
+//
+//	// Paramètres physiques
+//	const float si_nu = 1.0508E-6f; // viscosité cinématique en m^2/s
+//	const float si_rho = 1024.8103f; // densité du fluide en kg/m^3
+//	const float si_sigma = 73.81E-3f; // tension superficielle en kg/s^2
+//	const float si_g = 9.81f; // accélération gravitationnelle en m/s^2
+//
+//	// Conversion des unités
+//	units.set_m_kg_s(lbm_D, lbm_u, 1.0f, size_x_domain, lbm_u, si_rho);
+//
+//	// Initialiser LBM
+//	LBM lbm(lbm_N, 1u, 1u, 1u, units.nu(si_nu), 0.0f, 0.0f, -units.f(si_rho, si_g), units.sigma(si_sigma));
+//
+//	// Définir la position initiale du cube de fluide
+//	float start_x = (size_x_domain - size_x_fluid) / 2.0f;
+//	float start_y = (size_y_domain - size_y_fluid) / 2.0f;
+//	float start_z = (size_z_domain - size_z_fluid) / 2.0f;
+//
+//	// Définir le fluide dans le domaine
+//	const uint Nx = lbm.get_Nx(), Ny = lbm.get_Ny(), Nz = lbm.get_Nz();
+//	parallel_for(lbm.get_N(), [&](ulong n) {
+//		uint x = 0u, y = 0u, z = 0u;
+//		lbm.coordinates(n, x, y, z);
+//
+//		// Convertir les coordonnées en mètres
+//		float real_x = (float)x / (float)lbm_N.x * size_x_domain;
+//		float real_y = (float)y / (float)lbm_N.y * size_y_domain;
+//		float real_z = (float)z / (float)lbm_N.z * size_z_domain;
+//
+//		// Vérifier si le point se trouve dans le cube de fluide
+//		if (real_x >= start_x && real_x < start_x + size_x_fluid &&
+//			real_y >= start_y && real_y < start_y + size_y_fluid &&
+//			real_z >= start_z && real_z < start_z + size_z_fluid) {
+//			lbm.flags[n] = TYPE_F;
+//			lbm.phi[n] = 1.0f; // Fluide
+//		}
+//		else if (z == 0) {
+//			lbm.flags[n] = TYPE_S; // Surface solide (fond du domaine)
+//		}
+//		});
+//
+//	// Configurer les graphiques et lancer la simulation
+//	lbm.graphics.visualization_modes = lbm.get_D() == 1u ? VIS_PHI_RAYTRACE : VIS_PHI_RASTERIZE;
+//#if defined(GRAPHICS) && !defined(INTERACTIVE_GRAPHICS)
+//	lbm.run(0u); // Initialiser la simulation
+//	while (lbm.get_t() <= units.t(1.0f)) { // Boucle principale de simulation
+//		if (lbm.graphics.next_frame(units.t(1.0f), 20.0f)) { // Générer une vidéo
+//			lbm.graphics.set_camera_centered(-30.0f, 20.0f, 100.0f, 1.0f);
+//			lbm.graphics.write_frame(get_exe_path() + "export/n/");
+//			lbm.graphics.set_camera_centered(10.0f, 40.0f, 100.0f, 1.0f);
+//			lbm.graphics.write_frame(get_exe_path() + "export/p/");
+//			lbm.graphics.set_camera_centered(0.0f, 0.0f, 45.0f, 1.0f);
+//			lbm.graphics.write_frame(get_exe_path() + "export/o/");
+//			lbm.graphics.set_camera_centered(0.0f, 90.0f, 45.0f, 1.0f);
+//			lbm.graphics.write_frame(get_exe_path() + "export/t/");
+//		}
+//		lbm.run(1u);
+//	}
+//#else // GRAPHICS && !INTERACTIVE_GRAPHICS
+//	lbm.run();
+//#endif // GRAPHICS && !INTERACTIVE_GRAPHICS
+//}
+
+
+
+/*void main_setup() {
+	// Longueur en mètres
+	const float x = 1.0f;
+
+	// Unités en LBM (nombre de cellules par dimension)
+	const uint3 lbm_N = resolution(float3(1.0f, 1.0f, 1.0f), 4000u);
+
+	// Vélocité si
+	const float u = 1.0f;
+
+	// LBM vélocité
+	const float lbm_u = 1.0f;
+
+	// Densité volumique si
+	const float rho = 1000.f;
+
+	const float si_t = 0.003f;
+
+	const float3 cuboid_position = float3(units.x(0.5), units.x(0.5), units.x(0.7));
+	const float3 cuboid_length = float3(units.x(0.4), units.x(0.4), units.x(0.3));
+
+	// LBM densité volumique
+	const float lbm_rho = 1.0f;
+
+	units.set_m_kg_s(lbm_N.x / x, lbm_u, lbm_rho, x, u, rho);
+
+	// Imprimer les valeurs de conversion pour vérification
+	std::cout << "Conversions des unités:" << std::endl;
+	std::cout << "Longueur en LBM : " << units.x(1.0f) << " cellules" << std::endl;
+	std::cout << "Vitesse en LBM : " << units.u(u) << " unités LBM" << std::endl;
+	std::cout << "Densité en LBM : " << units.rho(rho) << " unités LBM" << std::endl;
+	std::cout << "Viscosité en LBM : " << units.nu(1.0E-6f) << " unités LBM" << std::endl;
+	std::cout << "Force en LBM : " << units.f(rho, 9.81f) << " unités LBM" << std::endl;
+	std::cout << "Tension superficielle en LBM : " << units.sigma(72.8E-3f) << " unités LBM" << std::endl;
+
+	const uint3 lbm_x = uint3(units.x(1.0f), units.x(1.0f), units.x(1.0f));
+	const uint lbm_y = units.x(1.0f);
+	const uint lbm_z = units.x(1.0f);
+
+	LBM lbm(lbm_N, 1u, 1u, 1u, units.nu(1.0E-6f), 0.0f, 0.0f, -units.f(rho, 9.81f), units.sigma(72.8E-3f));
+
+	//LBM lbm(128u, 256u, 256u, 0.005f, 0.0f, 0.0f, -0.0002f, 0.0001f);
+	// ###################################################################################### define geometry ######################################################################################
+	const uint Nx = lbm.get_Nx(), Ny = lbm.get_Ny(), Nz = lbm.get_Nz(); parallel_for(lbm.get_N(), [&](ulong n) { uint x = 0u, y = 0u, z = 0u; lbm.coordinates(n, x, y, z);
+	//if (z < Nz * 6u / 8u && y < Ny / 8u) lbm.flags[n] = TYPE_F;
+	//if (cuboid(x, y, z, cuboid_position, cuboid_length)) lbm.flags[n] = TYPE_F;
+	if (cuboid(x, y, z, float3(units.x(0.5), units.x(0.5), units.x(0.7)), float3(units.x(0.4), units.x(0.4), units.x(0.3)))) lbm.flags[n] = TYPE_F;
+	if (z <= units.x(0.1)) lbm.flags[n] = TYPE_F;
+	//if (plane(x, y, z, float3(0.0f, 0.0f, 0.1f), float3(0.0f, 0.0f, 1.0f))) lbm.flags[n] = TYPE_S;
+	if (x == 0u || x == Nx - 1u || y == 0u || y == Ny - 1u || z == 0u || z == Nz - 1u) lbm.flags[n] = TYPE_S; // all non periodic
+		});
+	// ####################################################################### run simulation, export images and data ##########################################################################
+	lbm.graphics.visualization_modes = lbm.get_D() == 1u ? VIS_PHI_RAYTRACE : VIS_PHI_RASTERIZE;
+	lbm.run();
+	//lbm.run(0u);
+	//while (lbm.get_t() <= units.t(si_t)) {
+	//	lbm.run(1u);
+	//}
+}/**/
+
+/*void main_setup() { // raindrop impact; required extensions in defines.hpp: FP16C, VOLUME_FORCE, EQUILIBRIUM_BOUNDARIES, SURFACE, INTERACTIVE_GRAPHICS or GRAPHICS
+	// ################################################################## define simulation box size, viscosity and volume force ###################################################################
+	const uint3 lbm_N = resolution(float3(1.0f, 1.0f, 0.5f), 4000u); // input: simulation box aspect ratio and VRAM occupation in MB, output: grid resolution
+	float lbm_D = (float)lbm_N.x/2.0f;
+	const float lbm_u = 0.05f; // impact velocity in LBM units
+	const float si_T = 0.003f; // simulated time in [s]
+	const float inclination = 20.0f; // impact angle [°], 0 = vertical
+	const int select_drop_size = 12;
+	//                            0        1        2        3        4        5        6        7        8        9       10       11       12       13 (13 is for validation)
+	const float si_Ds[] = { 1.0E-3f, 1.5E-3f, 2.0E-3f, 2.5E-3f, 3.0E-3f, 3.5E-3f, 4.0E-3f, 4.5E-3f, 5.0E-3f, 5.5E-3f, 6.0E-3f, 6.5E-3f, 7.0E-3f, 4.1E-3f };
+	const float si_us[] = {   4.50f,   5.80f,   6.80f,   7.55f,   8.10f,   8.45f,   8.80f,   9.05f,   9.20f,   9.30f,   9.40f,   9.45f,   9.55f,   7.21f };
+	float const si_nu = 1.0508E-6f; // kinematic shear viscosity [m^2/s] at 20°C and 35g/l salinity
+	const float si_rho = 1024.8103f; // fluid density [kg/m^3] at 20°C and 35g/l salinity
+	const float si_sigma = 73.81E-3f; // fluid surface tension [kg/s^2] at 20°C and 35g/l salinity
+	const float si_g = 9.81f; // gravitational acceleration [m/s^2]
+	const float si_D = si_Ds[select_drop_size]; // drop diameter [m] (1-7mm)
+	const float si_u = si_us[select_drop_size]; // impact velocity [m/s] (4.50-9.55m/s)
+	units.set_m_kg_s(lbm_D, lbm_u, 1.0f, 4000, si_u, si_rho); // calculate 3 independent conversion factors (m, kg, s)
+	print_info("D = "+to_string(si_D, 6u));
+	print_info("Re = "+to_string(units.si_Re(si_D, si_u, si_nu), 6u));
+	print_info("We = "+to_string(units.si_We(si_D, si_u, si_rho, si_sigma), 6u));
+	print_info("Fr = "+to_string(units.si_Fr(si_D, si_u, si_g), 6u));
+	print_info("Ca = "+to_string(units.si_Ca(si_u, si_rho, si_nu, si_sigma), 6u));
+	print_info("Bo = "+to_string(units.si_Bo(si_D, si_rho, si_g, si_sigma), 6u));
+	print_info(to_string(to_uint(1000.0f*si_T))+" ms = "+to_string(units.t(0.01f))+" LBM time steps");
+	const float lbm_H = 0.4f*(float)lbm_N.x;
+	const float lbm_R = 0.5f*lbm_D; // drop radius
+	LBM lbm(lbm_N, 1u , 1u, 1u, units.nu(si_nu), 0.0f, 0.0f, -units.f(si_rho, si_g), units.sigma(si_sigma)); // calculate values for remaining parameters in simulation units
+	// ###################################################################################### define geometry ######################################################################################
+	const uint Nx=lbm.get_Nx(), Ny=lbm.get_Ny(), Nz=lbm.get_Nz(); parallel_for(lbm.get_N(), [&](ulong n) { uint x=0u, y=0u, z=0u; lbm.coordinates(n, x, y, z);
+	if (cuboid(x, y, z, float3(Nx / 2.f, Ny / 2.f, Nz / 2.f), float3(Nx / 2.f, Ny / 2.f, Nz / 2.f))) lbm.flags[n] = TYPE_F;
+		if(z==0)  lbm.flags[n] = TYPE_S;
+		else if((x==0u||x==Nx-1u||y==0u||y==Ny-1u||z==Nz-1u)&&(float)z>lbm_H+lbm_R) { // make drops that hit the simulation box ceiling disappear
+			lbm.rho[n] = 0.5f;
+			lbm.flags[n] = TYPE_E;
+		}
+	}); // ####################################################################### run simulation, export images and data ##########################################################################
+	lbm.graphics.visualization_modes = lbm.get_D()==1u ? VIS_PHI_RAYTRACE : VIS_PHI_RASTERIZE;
+#if defined(GRAPHICS) && !defined(INTERACTIVE_GRAPHICS)
+	lbm.run(0u); // initialize simulation
+	while(lbm.get_t()<=units.t(si_T)) { // main simulation loop
+		if(lbm.graphics.next_frame(units.t(si_T), 20.0f)) { // generate video
+			lbm.graphics.set_camera_centered(-30.0f, 20.0f, 100.0f, 1.0f);
+			lbm.graphics.write_frame(get_exe_path()+"export/n/");
+			lbm.graphics.set_camera_centered(10.0f, 40.0f, 100.0f, 1.0f);
+			lbm.graphics.write_frame(get_exe_path()+"export/p/");
+			lbm.graphics.set_camera_centered(0.0f, 0.0f, 45.0f, 1.0f);
+			lbm.graphics.write_frame(get_exe_path()+"export/o/");
+			lbm.graphics.set_camera_centered(0.0f, 90.0f, 45.0f, 1.0f);
+			lbm.graphics.write_frame(get_exe_path()+"export/t/");
+		}
+		lbm.run(1u);
+	}
+	//lbm.run(units.t(si_T)); // only generate one image
+	//lbm.graphics.set_camera_centered(-30.0f, 20.0f, 100.0f, 1.0f);
+	//lbm.graphics.write_frame();
+#else // GRAPHICS && !INTERACTIVE_GRAPHICS
+	lbm.run();
+#endif // GRAPHICS && !INTERACTIVE_GRAPHICS
+} /**/
+
+
+
 
 #ifdef BENCHMARK
 #include "info.hpp"
