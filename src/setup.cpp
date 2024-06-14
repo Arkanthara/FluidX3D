@@ -5,6 +5,7 @@ void main_setup() { // dam break; required extensions in defines.hpp: FP16S, VOL
 	// ################################################################## define simulation box size, viscosity and volume force ###################################################################
 	// LBM lbm(128u, 384u, 96u, 0.02f, 0.0f, -0.00007f, -0.0005f, 0.01f);
 	// LBM lbm(128u, 256u, 256u, 0.005f, 0.0f, 0.0f, -0.0002f, 0.0001f);
+	bool video = false;
 	LBM lbm(400u, 400u, 200u, 0.009f, 0.0f, 0.0f, -0.0005f, 0.0001f);
 	// ###################################################################################### define geometry ######################################################################################
 	const uint Nx=lbm.get_Nx(), Ny=lbm.get_Ny(), Nz=lbm.get_Nz(); parallel_for(lbm.get_N(), [&](ulong n) { uint x=0u, y=0u, z=0u; lbm.coordinates(n, x, y, z);
@@ -12,8 +13,20 @@ void main_setup() { // dam break; required extensions in defines.hpp: FP16S, VOL
 		if(x==0u||x==Nx-1u||y==0u||y==Ny-1u||z==0u||z==Nz-1u) lbm.flags[n] = TYPE_S; // all non periodic
 		if(cuboid(x, y, z, float3(200u, 200u, 100u), float3(200u, 200u, 110u))) lbm.flags[n] = TYPE_F;
 	}); // ####################################################################### run simulation, export images and data ##########################################################################
-	lbm.graphics.visualization_modes = lbm.get_D()==1u ? VIS_PHI_RAYTRACE : VIS_PHI_RASTERIZE;
+
+	lbm.graphics.write_frame(get_exe_path() + "export/camera_2/");lbm.graphics.visualization_modes = lbm.get_D() == 1u ? VIS_PHI_RAYTRACE : VIS_PHI_RASTERIZE;
+#if defined(GRAPHICS) && !defined(INTERACTIVE_GRAPHICS)
+	lbm.run(0u); // Initialiser la simulation
+	while (lbm.get_t() <= 5300u) { // Boucle principale de simulation
+		if (lbm.graphics.next_frame(5300u, 60.0f)) { // Générer une vidéo
+			lbm.graphics.set_camera_centered(60.9f, 10.5f, 100.0f, 0.606531f);
+			lbm.graphics.write_frame(get_exe_path() + "export/camera/");
+		}
+		lbm.run(1u);
+	}
+#else // GRAPHICS && !INTERACTIVE_GRAPHICS
 	lbm.run();
+#endif // GRAPHICS && !INTERACTIVE_GRAPHICS
 } /**/
 
 //void main_setup() {
