@@ -14,7 +14,7 @@ void main_setup() { // dam break; required extensions in defines.hpp: FP16S, VOL
 		if(cuboid(x, y, z, float3(200u, 200u, 100u), float3(200u, 200u, 110u))) lbm.flags[n] = TYPE_F;
 	}); // ####################################################################### run simulation, export images and data ##########################################################################
 
-	lbm.graphics.write_frame(get_exe_path() + "export/camera_2/");lbm.graphics.visualization_modes = lbm.get_D() == 1u ? VIS_PHI_RAYTRACE : VIS_PHI_RASTERIZE;
+	lbm.graphics.visualization_modes = lbm.get_D() == 1u ? VIS_PHI_RAYTRACE : VIS_PHI_RASTERIZE;
 #if defined(GRAPHICS) && !defined(INTERACTIVE_GRAPHICS)
 	lbm.run(0u); // Initialiser la simulation
 	while (lbm.get_t() <= 5300u) { // Boucle principale de simulation
