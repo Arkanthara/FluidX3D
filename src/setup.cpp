@@ -8,9 +8,10 @@ void main_setup() { // dam break; required extensions in defines.hpp: FP16S, VOL
 	bool video = false;
 
 	// Chouette
-	LBM lbm(400u, 400u, 200u, 0.009f, 0.0f, 0.0f, -0.0005f, 0.0001f);
+	//LBM lbm(400u, 400u, 200u, 0.009f, 0.0f, 0.0f, -0.0005f, 0.0001f);
 	// 
 	//LBM lbm(400u, 400u, 200u, 0.05f, 0.0f, 0.0f, -0.0005f, 0.01f);
+	LBM lbm(400u, 400u, 200u, 0.009f, 0.0f, 0.0f, -0.0005f, 0.01f);
 	// ###################################################################################### define geometry ######################################################################################
 	const uint Nx=lbm.get_Nx(), Ny=lbm.get_Ny(), Nz=lbm.get_Nz(); parallel_for(lbm.get_N(), [&](ulong n) { uint x=0u, y=0u, z=0u; lbm.coordinates(n, x, y, z);
 		//if(z<Nz*6u/8u && y<Ny/8u) lbm.flags[n] = TYPE_F;
