@@ -56,6 +56,9 @@ temp/shapes.o: src/shapes.cpp src/shapes.hpp src/utilities.hpp make.sh
 	@mkdir -p temp
 	$(CC) -c src/shapes.cpp -o temp/shapes.o $(CFLAGS) $(LDFLAGS_OPENCL)
 
-.PHONY: clean
+
+.PHONY: video, clean
+video:
+	 ffmpeg -framerate 120 -pattern_type glob -i "bin/export/*/image-*.png" -c:v libx264 -pix_fmt yuv420p -b:v 24M "video.mp4"
 clean:
 	@rm -rf temp bin/FluidX3D
