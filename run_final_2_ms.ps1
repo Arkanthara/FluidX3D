@@ -16,7 +16,7 @@ $args = $args[1..$args.Count]
 $output_file = "logs/usage_stats.csv"
 
 # Écrire l'en-tête du fichier CSV
-"Timestamp,CPU_Usage(%),RAM_Usage(%),GPU_Usage(%),GPU_Memory_Usage(%)" | Out-File -FilePath $output_file -Encoding utf8
+"Timestamp,CPU_Usage(%),RAM_Usage(%),GPU_Usage(%),GPU_Memory_Usage(%),GPU_Memory_Access_Usage(%)" | Out-File -FilePath $output_file -Encoding utf8
 
 # Démarrer le programme dans le répertoire spécifié en arrière-plan et obtenir son PID
 $process = if ($args) {
@@ -53,6 +53,12 @@ function Get-GPUUsage {
     return [Decimal]::Round([decimal]::Parse($gpu_usage.Trim()), 2)
 }
 
+
+function Get-GPUMemoryAccessUsage {
+    $gpu_usage = & nvidia-smi --query-gpu=utilization.memory --format=csv,noheader,nounits
+    return [Decimal]::Round([decimal]::Parse($gpu_usage.Trim()), 2)
+}
+
 # Fonction pour obtenir l'utilisation de la mémoire GPU en pourcentage
 function Get-GPUMemoryUsage {
     $memory_used = & nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits
@@ -71,7 +77,8 @@ while ($true) {
     $ram_usage = Get-RAMUsage
     $gpu_usage = Get-GPUUsage
     $gpu_memory_usage = Get-GPUMemoryUsage
-    "$timestamp,$cpu_usage,$ram_usage,$gpu_usage,$gpu_memory_usage" | Out-File -FilePath $output_file -Append -Encoding utf8
+    $gpu_memory_access_usage = Get-GPUMemoryAccessUsage
+    "$timestamp,$cpu_usage,$ram_usage,$gpu_usage,$gpu_memory_usage,$gpu_memory_access_usage" | Out-File -FilePath $output_file -Append -Encoding utf8
     #Start-Sleep -Milliseconds 1
 }
 
