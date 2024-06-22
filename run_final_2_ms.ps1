@@ -35,7 +35,7 @@ $total_ram = (Get-WmiObject -Class Win32_OperatingSystem).TotalVisibleMemorySize
 # Fonction pour obtenir l'utilisation du CPU en pourcentage pour le processus spécifique
 function Get-CPUUsage {
     $cpu_nb = (Get-WMIObject Win32_ComputerSystem).NumberOfLogicalProcessors
-    $cpu_usage = (Get-Counter "\\Processus($processname*)\\% temps processeur").CounterSamples | Select-Object -ExpandProperty CookedValue
+    $cpu_usage = (Get-Counter "\Processus($processname*)\% temps processeur").CounterSamples | Select-Object -ExpandProperty CookedValue
     $cpu_usage = [Decimal]::Round(($cpu_usage / $cpu_nb), 2)
     return $cpu_usage
 }
@@ -72,7 +72,7 @@ while ($true) {
     $gpu_usage = Get-GPUUsage
     $gpu_memory_usage = Get-GPUMemoryUsage
     "$timestamp,$cpu_usage,$ram_usage,$gpu_usage,$gpu_memory_usage" | Out-File -FilePath $output_file -Append -Encoding utf8
-    Start-Sleep -Milliseconds 1
+    #Start-Sleep -Milliseconds 1
 }
 
 Write-Host "Resource usage recorded in $output_file"
