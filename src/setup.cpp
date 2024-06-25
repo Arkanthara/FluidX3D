@@ -27,7 +27,8 @@ void main_setup() { // dam break; required extensions in defines.hpp: FP16S, VOL
 	lbm.run(0u); // Initialiser la simulation
 	while (lbm.get_t() <= 5300u) { // Boucle principale de simulation
 		if (lbm.graphics.next_frame(5300u, 60.0f)) { // Générer une vidéo
-			lbm.graphics.set_camera_centered(44.6f, 15.3f, 100.0f, 0.472367f);
+			lbm.graphics.set_camera_free(float3(0.749735f * (float)Nx, -0.723476f * (float)Ny, 0.746680f * (float)Nz), -45.0f, 31.8f, 100.0f);
+			// lbm.graphics.set_camera_centered(44.6f, 15.3f, 100.0f, 0.472367f);
 			lbm.graphics.write_frame(get_exe_path() + "export/camera/");
 		}
 		lbm.run(1u);
