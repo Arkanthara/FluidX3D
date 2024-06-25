@@ -13,7 +13,7 @@ void main_setup() { // dam break; required extensions in defines.hpp: FP16S, VOL
 	//LBM lbm(400u, 400u, 200u, 0.05f, 0.0f, 0.0f, -0.0005f, 0.01f);
 	//LBM lbm(400u, 400u, 200u, 0.009f, 0.0f, 0.0f, -0.0005f, 0.01f);
 	uint k = 2;
-	LBM lbm(k * 200u, k * 200u, k * 100u, 0.009f * k, 0.0f, 0.0f, -0.0005f, 0.01f);
+	LBM lbm(k * 200u, k * 200u, k * 100u, 0.009f, 0.0f, 0.0f, -0.0005f, 0.01f);
 	// ###################################################################################### define geometry ######################################################################################
 	const uint Nx=lbm.get_Nx(), Ny=lbm.get_Ny(), Nz=lbm.get_Nz(); parallel_for(lbm.get_N(), [&](ulong n) { uint x=0u, y=0u, z=0u; lbm.coordinates(n, x, y, z);
 		//if(z<Nz*6u/8u && y<Ny/8u) lbm.flags[n] = TYPE_F;
@@ -27,7 +27,7 @@ void main_setup() { // dam break; required extensions in defines.hpp: FP16S, VOL
 	lbm.run(0u); // Initialiser la simulation
 	while (lbm.get_t() <= 5300u) { // Boucle principale de simulation
 		if (lbm.graphics.next_frame(5300u, 60.0f)) { // Générer une vidéo
-			lbm.graphics.set_camera_centered(60.9f, 10.5f, 100.0f, 0.606531f);
+			lbm.graphics.set_camera_centered(44.6f, 15.3f, 100.0f, 0.472367f);
 			lbm.graphics.write_frame(get_exe_path() + "export/camera/");
 		}
 		lbm.run(1u);
